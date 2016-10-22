@@ -36,6 +36,8 @@ type Student struct {
 func ParseWorkDir(path string) (map[string]*Student, error) {
 	var returnMap = make(map[string]*Student)
 
+	log.Fatalf("Parsing Work Dir not yet implemented.\n")
+
 	return returnMap, nil
 }
 

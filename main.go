@@ -39,10 +39,16 @@ func checkArguments() {
 	} else {
 		reader := bufio.NewReader(os.Stdin)
 		for {
-			fmt.Println("Output Directory is already specified. Do you want to delete it? (y/n)")
+			fmt.Println("Output Directory is already specified. What do you want to do?")
+			fmt.Println("1. Continue Working")
+			fmt.Println("2. Delete it")
+			fmt.Println("3. Quit")
 			text, _ := reader.ReadString('\n')
 			val := strings.TrimSpace(strings.ToLower(text))
-			if val == "y" {
+			if val == "1" {
+				student.ParseWorkDir(*workDir)
+				break
+			} else if val == "2" {
 				fmt.Println("ARE YOU SURE? (y/n)")
 				confirmText, _ := reader.ReadString('\n')
 				confirmVal := strings.TrimSpace(strings.ToLower(confirmText))
@@ -53,8 +59,8 @@ func checkArguments() {
 				} else {
 					log.Fatalf("Will not proceed. Please specify a different output directory.")
 				}
-			} else if val == "n" {
-				log.Fatalf("Will not proceed. Please specify a different output directory.")
+			} else if val == "3" {
+				os.Exit(0)
 			}
 		}
 	}
