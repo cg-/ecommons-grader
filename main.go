@@ -9,35 +9,30 @@ import (
 	"log"
 	"os"
 	"strings"
+
+	"github.com/cg-/ecommons-grader/student"
+	"github.com/davecgh/go-spew/spew"
 )
 
-// GRADEFILE is the name of the file containing the grades in the zip file.
-const GRADEFILE string = "grades.csv"
+// OriginalStudentMap is the map of data we need to process.
+var OriginalStudentMap map[string]*student.Student
 
-// StudentMap is a map of Student structs that will hold all the data while
-// we process it.
-var StudentMap = make(map[string]*Student)
+// OutputStudentMap is the map of data we have already processed.
+var OutputStudentMap map[string]*student.Student
 
-// Student is a structure that will hold pointers to the various files inside
-// the downloaded zip file. We will use these while we process the data.
-type Student struct {
-	Name        string
-	ID          string
-	CommentFile *zip.File
-	Grade       int
-	Files       []*zip.File
-}
+// Command Line Arguments
+var inputZipFlag = flag.String("input", "bulk_download.zip", "Path to the eCommons ZIP file.")
+var workDir = flag.String("work", ".ecommons-work", "Path to the work directory.")
 
-func main() {
-	// Parse options
-	inputZipFlag := flag.String("input", "bulk_download.zip", "Path to the eCommons ZIP file.")
-	outputDir := flag.String("output", "output", "Path to the output directory.")
+//outputZipFlag := flag.String("output", "output.zip", "Path to the output ZIP file.")
+
+func checkArguments() {
 	flag.Parse()
 
-	_, err := ioutil.ReadDir(*outputDir)
+	_, err := ioutil.ReadDir(*workDir)
 	if err != nil {
 		if os.IsNotExist(err) {
-			os.Mkdir(*outputDir, 0755)
+			os.Mkdir(*workDir, 0755)
 		} else {
 			log.Fatalf("Err opening output folder [%s]", err.Error())
 		}
@@ -52,8 +47,8 @@ func main() {
 				confirmText, _ := reader.ReadString('\n')
 				confirmVal := strings.TrimSpace(strings.ToLower(confirmText))
 				if confirmVal == "y" {
-					os.RemoveAll(*outputDir)
-					os.Mkdir(*outputDir, 0755)
+					os.RemoveAll(*workDir)
+					os.Mkdir(*workDir, 0755)
 					break
 				} else {
 					log.Fatalf("Will not proceed. Please specify a different output directory.")
@@ -63,31 +58,25 @@ func main() {
 			}
 		}
 	}
+}
 
+func main() {
+	spew.Dump(OriginalStudentMap)
+	checkArguments()
+
+	// Open the original input file
 	z, err := zip.OpenReader(*inputZipFlag)
 	if err != nil {
 		log.Fatalf("Err opening zip file \"" + *inputZipFlag + "\"" + err.Error())
 	}
 	defer z.Close()
 
-	labDir := strings.Split(z.File[0].Name, "/")[0] + "/"
+	// Parse the original input file
+	s, i, err := student.ParseGradeFile(z)
+	spew.Dump(i)
 
-	for i := range z.File {
-		if z.File[i].Name == labDir+GRADEFILE {
-			log.Printf("Found the grades file [%s]", z.File[i].Name)
-		} else {
-			studentNameSplit := strings.Split(z.File[i].Name, "/")
-			if StudentMap[studentNameSplit[1]] == nil {
-				StudentMap[studentNameSplit[1]] = &Student{}
-			}
-			StudentMap[studentNameSplit[1]].Files = append(StudentMap[studentNameSplit[1]].Files, z.File[i])
-		}
+	// Now we start grading.
+	for k, _ := range s {
+		log.Printf("%s", k)
 	}
-
-	i := 0
-	for k, _ := range StudentMap {
-		i++
-		fmt.Println(k)
-	}
-	fmt.Printf("Total students: %d\n", i)
 }
